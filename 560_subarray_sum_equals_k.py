@@ -15,7 +15,7 @@ class Solution:
 
             # # else:
             # #     prefixSum[curSum] = 1
-            # print(f'curSum {curSum} diff {diff} res {res} prefixSum {prefixSum}')a
+            # print(f'curSum {curSum} diff {diff} res {res} prefixSum {prefixSum}')
             
         return res
 
