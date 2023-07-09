@@ -19,6 +19,6 @@ class Solution:
         return False
 
 
-s1 = 'dinitrophenylhydrazine'
+s1 = 'abcd'
 s2 = 'dcda'
 print(Solution().checkInclusion(s1,s2))
