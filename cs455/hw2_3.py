@@ -1,47 +1,31 @@
-def edit_distance_with_transposition(str1, str2):
-    m, n = len(str1), len(str2)
-    dp = [[0] * (n+1) for _ in range(m+1)]
-
-    # Initialize the first row and first column
-    for i in range(m+1):
+def edit_distance_with_transposition(S, T):
+    m, n = len(S), len(T)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    for i in range(m + 1):
         dp[i][0] = i
-    for j in range(n+1):
+    for j in range(n + 1):
         dp[0][j] = j
-
-    # Fill in the matrix
-    for i in range(1, m+1):
-        for j in range(1, n+1):
-            if str1[i-1] == str2[j-1]:
-                dp[i][j] = dp[i-1][j-1]
+    
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if S[i - 1] == T[j - 1]:
+                cost = 0
             else:
-                dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
-                if i > 1 and j > 1 and str1[i-1] == str2[j-2] and str1[i-2] == str2[j-1]:
-                    dp[i][j] = min(dp[i][j], dp[i-2][j-2] + 1)
+                cost = 1
+            
+            dp[i][j] = min(
+                dp[i - 1][j] + 1,    
+                dp[i][j - 1] + 1,    
+                dp[i - 1][j - 1] + cost  
+            )
+            
+            if i > 1 and j > 1 and S[i - 1] == T[j - 2] and S[i - 2] == T[j - 1]:
+                dp[i][j] = min(dp[i][j], dp[i - 2][j - 2] + 1)  
+    edit_distance = dp[m][n]
+    
+    return edit_distance
 
-    # Backtrack to find the sequence of operations
-    i, j = m, n
-    operations = []
-    while i > 0 or j > 0:
-        if i > 0 and dp[i][j] == dp[i-1][j] + 1:
-            operations.append(f"Delete '{str1[i-1]}' from position {i}")
-            i -= 1
-        elif j > 0 and dp[i][j] == dp[i][j-1] + 1:
-            operations.append(f"Insert '{str2[j-1]}' at position {i+1}")
-            j -= 1
-        else:
-            if str1[i-1] != str2[j-1]:
-                operations.append(f"Replace '{str1[i-1]}' at position {i} with '{str2[j-1]}'")
-            i -= 1
-            j -= 1
-
-    operations.reverse()
-    return dp[m][n], operations
-
-# Example usage
-str1 = "CTAC"
-str2 = "GCTCA"
-distance, operations = edit_distance_with_transposition(str1, str2)
-print("Edit Distance:", distance)
-print("Sequence of Operations:")
-for op in operations:
-    print(op)
+S = "CTAC"
+T = "GCTCA"
+print(edit_distance_with_transposition(S, T)) # prints 2
