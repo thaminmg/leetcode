@@ -3,10 +3,10 @@ class DisjointSetCollection:
         self.parent = [i for i in range(n)]
         self.rank = [0] * n
 
-    def find(self, i):
-        if self.parent[i] != i:
-            self.parent[i] = self.find(self.parent[i])
-        return self.parent[i]
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
 
     def union(self, x, y):
         root_x = self.find(x)
@@ -21,9 +21,9 @@ class DisjointSetCollection:
                 self.parent[root_y] = root_x
                 self.rank[root_x] += 1
 
-def find_connected_components(graph_edges):
+def main():
+    graph_edges = [[0, 1], [2, 3], [3, 5], [4, 6]]
     n = max(max(edge) for edge in graph_edges) + 1
-    print(n)
     dsc = DisjointSetCollection(n)
 
     for edge in graph_edges:
@@ -36,12 +36,7 @@ def find_connected_components(graph_edges):
             components[root] = []
         components[root].append(i)
 
-    return list(components.values())
+    for i, component in enumerate(list(components.values())):
+        print(f"Connected Component {i + 1}: {component}")
 
-# Test the class and find connected components
-graph_edges = [[0, 1], [2, 3], [3, 5], [4, 6]]
-connected_components = find_connected_components(graph_edges)
-
-# Output the set of nodes in each connected component
-for i, component in enumerate(connected_components):
-    print(f"Connected Component {i + 1}: {component}")
+main()

@@ -1,4 +1,3 @@
-import random
 class DisjointSetCollection:
     def __init__(self, n):
         self.parent = [i for i in range(n)]
@@ -22,12 +21,12 @@ class DisjointSetCollection:
                 self.parent[root_y] = root_x
                 self.rank[root_x] += 1
 
-def find_connected_components(graph_edges):
-    n = max(max(edge) for edge in graph_edges) + 1
-    print(n)
+# 2.1
+def find_connected_components_algorithm(edges):
+    n = max(max(edge) for edge in edges) + 1
     dsc = DisjointSetCollection(n)
 
-    for edge in graph_edges:
+    for edge in edges:
         dsc.union(edge[0], edge[1])
 
     components = {}
@@ -39,32 +38,31 @@ def find_connected_components(graph_edges):
 
     return list(components.values())
 
-def generate_connected_components_graph(node_counts):
-    graph_edges = []
+# 2.2
+def generate_graph(node_counts):
+    edges = []
+    components = []
+    start = 0
+    for count in node_counts:
+        component = list(range(start, start + count))
+        components.append(set(component))
+        for i in range(start, start + count):
+            for j in range(i + 1, start + count):
+                edges.append((i, j))
+        start += count
+    return edges, components
 
-    for nodes in node_counts:
-        component_edges = [(i, j) for i in range(nodes) for j in range(i+1, nodes)]
-        graph_edges.extend(component_edges)
+# 2.3
+def test_generator_vs_algorithm(node_counts):
+    edges, generated_components = generate_graph(node_counts)
+    dsc_components = find_connected_components_algorithm(edges)
+    assert set(map(frozenset, generated_components)) == set(map(frozenset, dsc_components))
+    print(f"Test passed for configuration {node_counts}")
 
-    return graph_edges
+def main():
+    configs = [[10]*10, [100, 500], [250, 5, 10]]
 
-def test_algorithm(generator, algorithm, configurations):
-    for config in configurations:
-        graph_edges = generator(config)
-        print(graph_edges)
-        print()
-        connected_components_generator = [(range(sum(config[:i]), sum(config[:i+1]))) for i in range(len(config))]
+    for config in configs:  
+        test_generator_vs_algorithm(config)
 
-        connected_components_algorithm = algorithm(connected_components_generator)
-
-        print(connected_components_generator)
-        print(connected_components_algorithm)
-
-        assert (connected_components_generator) == (connected_components_algorithm), \
-            f"Test failed for configuration {config}"
-
-# Test configurations
-configurations = [[10]*10, [100, 500], [250, 5, 10]]
-
-# Run the tests
-test_algorithm(generate_connected_components_graph, find_connected_components, configurations)
+main()
