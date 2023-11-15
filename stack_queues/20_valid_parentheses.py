@@ -1,4 +1,22 @@
 class Solution:
+    def isValid(self, s: str) -> bool:
+        stack = []
+
+        for ch in s:
+            if ch in '([{':
+                stack.append(ch)
+            else:
+                if stack:
+                    top = stack[-1]
+                    if (top == '(' and ch == ')') or (top == '{' and ch == '}') or (top == '[' and ch == ']'):
+                        stack.pop()
+                    else:
+                        return False
+                else:
+                    return False
+
+        return True if not stack else False 
+        
     # My accepted solution
     # Runtime: 32 ms, faster than 58.27% of Python3 online submissions for Valid Parentheses.
     # Memory Usage: 14.1 MB, less than 96.57% of Python3 online submissions for Valid Parentheses.    
