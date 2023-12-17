@@ -1,0 +1,245 @@
+from collections import deque
+
+class GraphOfDocument:
+    def __init__(self):
+        self.nodes = {}
+        self.edges = {}
+
+    def add_node(self, word):
+        if word not in self.nodes:
+            self.nodes[word] = {'count': 0}
+
+    def add_edge(self, u, v):
+        if u not in self.edges:
+            self.edges[u] = {}
+        if v not in self.edges[u]:
+            self.edges[u][v] = {'count': 0}
+
+    def add_occurrence(self, word):
+        self.nodes[word]['count'] += 1
+
+    def add_event_occurrence(self, u, v):
+        self.edges[u][v]['count'] += 1
+
+    def get_count(self, word):
+        return self.nodes[word]['count'] if word in self.nodes else 0
+
+    def BFS(self, s, node_count_thresh, arc_count_thresh):
+        visited = set()
+        queue = deque([(s, None)])  # (node, parent)
+
+        while queue:
+            current, parent = queue.popleft()
+            if current not in visited and self.nodes[current]['count'] < node_count_thresh:
+                visited.add(current)
+                yield current
+
+                if current in self.edges:
+                    for neighbor in self.edges[current]:
+                        if self.edges[current][neighbor]['count'] > arc_count_thresh:
+                            queue.append((neighbor, current))
+
+    def get_shortest_path(self, v):
+        if v not in self.nodes:
+            raise ValueError(f"Node {v} is unknown. Run BFS first.")
+
+        path = []
+        while v is not None:
+            path.append(v)
+            # v = self.edges[v]['parent']
+            v = self.edges[v].get('parent')
+        return list(reversed(path))
+
+    def find_connected_components(self, node_count_thresh, arc_count_thresh):
+        components = []
+        visited = set()
+
+        for node in self.nodes:
+            if node not in visited and self.nodes[node]['count'] < node_count_thresh:
+                component = list(self.BFS(node, node_count_thresh, arc_count_thresh))
+                components.append(component)
+                visited.update(component)
+
+        return components
+
+def read_document(file_path):
+    with open(file_path, 'r') as file:
+        return file.read().lower().split()
+
+# Step 1
+def find_node_count_thresh(document, common_words):
+    counts = {word: document.count(word) for word in common_words}
+    return min(counts.values())
+
+# Step 2
+def analyze_graph(d, node_count_thresh, arc_count_thresh):
+    graph = GraphOfDocument()
+
+    for i in range(len(document) - 1):
+        word_u, word_v = document[i], document[i + 1]
+        graph.add_node(word_u)
+        graph.add_node(word_v)
+        graph.add_edge(word_u, word_v)
+        graph.add_occurrence(word_u)
+        graph.add_event_occurrence(word_u, word_v)
+
+    connected_components = graph.find_connected_components(node_count_thresh, arc_count_thresh)
+
+    return [connected_components, graph]
+
+# Step 3
+def analyze_graph_variation(d, node_count_thresh, arc_count_thresh):
+    graph = GraphOfDocument()
+
+    for i in range(len(document) - 1):
+        word_u, word_v = document[i], document[i + 1]
+        graph.add_node(word_u)
+        graph.add_node(word_v)
+        graph.add_edge(word_u, word_v)
+        graph.add_occurrence(word_u)
+        graph.add_event_occurrence(word_u, word_v)
+
+    connected_components = graph.find_connected_components(node_count_thresh, arc_count_thresh)
+
+    return [connected_components, graph]
+
+# Step 4
+def analyze_dataset(graph, dataset):
+    for wi, wi_plus_1 in dataset:
+        path = graph.get_shortest_path(wi)
+        print(f"{wi} {wi_plus_1} {' '.join(path)}")
+
+# Main execution
+document_file_path = "/Users/lucaszhao/Documents/Study/leetcode/cs455/term_project_doc.txt"
+document = read_document(document_file_path)
+
+common_words = ["the", "a", "of", "and", "in", "to", "is", "for", "that", "with", "as", "on", "by", "at", "this", "it", "from", "or", "an", "be"]  # Add more as needed
+node_count_thresh = find_node_count_thresh(document, common_words)
+
+# Step 2
+connected_components_d0 = analyze_graph(0, node_count_thresh, 6)
+# connected_components_d10 = analyze_graph(10, node_count_thresh, 6)  # Uncomment for Step 3
+connected_components_d10 = analyze_graph_variation(10, node_count_thresh, 0)
+
+# Step 4
+dataset = [["sport", "rules"], ["european", "charter"], ["swimmers", "squats"],
+           ["sport", "china"], ["ancient", "sports"], ["greeks", "olympic"]]
+graph_d0 = analyze_graph(0, float('inf'), 0)
+analyze_dataset(graph_d0[1], dataset)
+print()
+print("====================")
+print()
+graph_d10 = analyze_graph_variation(10, float('inf'), 0)
+analyze_dataset(graph_d10[1], dataset)
+
+
+====================================================================================================
+
+from collections import defaultdict
+from queue import Queue
+
+class Graph:
+    def __init__(self, document, d):
+        self.document = document.lower().split()
+        self.d = d
+        self.graph = defaultdict(list)
+        self.counts = defaultdict(int)
+        self.arc_counts = defaultdict(int)
+        self.build_graph()
+
+    def build_graph(self):
+        for i, word in enumerate(self.document):
+            self.counts[word] += 1
+            for j in range(i+1, min(i+self.d+1, len(self.document))):
+                if word != self.document[j]:
+                    self.graph[word].append(self.document[j])
+                    self.arc_counts[(word, self.document[j])] += 1
+
+    def get_count(self, word):
+        if word not in self.counts:
+            raise ValueError(f"No node with name {word}")
+        return self.counts[word]
+
+    def BFS(self, s, node_count_thresh, arc_count_thresh):
+        visited = set()
+        queue = Queue()
+        queue.put(s)
+        while not queue.empty():
+            node = queue.get()
+            if self.counts[node] < node_count_thresh:
+                visited.add(node)
+                for neighbor in self.graph[node]:
+                    if self.arc_counts[(node, neighbor)] > arc_count_thresh and neighbor not in visited:
+                        queue.put(neighbor)
+        return visited
+
+    def get_shortest_path(self, v):
+        parent = {v: None}
+        queue = Queue()
+        queue.put(v)
+        while not queue.empty():
+            node = queue.get()
+            for neighbor in self.graph[node]:
+                if neighbor not in parent:
+                    parent[neighbor] = node
+                    queue.put(neighbor)
+        path = []
+        while v is not None:
+            path.append(v)
+            v = parent[v]
+        return path[::-1]
+
+    def find_connected_components(self, node_count_thresh, arc_count_thresh):
+        visited = set()
+        components = []
+        for node in self.counts:
+            if node not in visited and self.counts[node] < node_count_thresh:
+                component = self.BFS(node, node_count_thresh, arc_count_thresh)
+                visited.update(component)
+                components.append(component)
+        return components
+
+with open("/Users/lucaszhao/Documents/Study/leetcode/cs455/term_project_doc.txt", "r") as f:
+    document = f.read()
+
+# Step 1: Find a suitable node_count_thresh
+common_words = ['the', 'a', 'of', 'and', 'in', 'is', 'it']
+
+
+# Step 2: Create two graphs and find connected components
+graph_d0 = Graph(document, d=0)
+counts_d0 = [graph_d0.get_count(word) for word in common_words]
+node_count_thresh_d0 = min(counts_d0)  # or use average: sum(counts) / len(counts)
+components_d0 = graph_d0.find_connected_components(node_count_thresh_d0, arc_count_thresh=6)
+
+graph_d10 = Graph(document, d=10)
+counts_d10 = [graph_d10.get_count(word) for word in common_words]
+node_count_thresh_d10 = min(counts_d10)  # or use average: sum(counts) / len(counts)
+components_d10 = graph_d10.find_connected_components(node_count_thresh_d10, arc_count_thresh=6)
+
+# Step 3: Repeat step 2 with different thresholds
+node_count_thresh = float('inf')
+arc_count_thresh = 0
+
+components_d0_no_thresh = graph_d0.find_connected_components(node_count_thresh, arc_count_thresh)
+components_d10_no_thresh = graph_d10.find_connected_components(node_count_thresh, arc_count_thresh)
+
+# Analyze the differences among the connected components found in the four runs
+# ...
+
+# Step 4: Use BFS and get_shortest_path on a small dataset
+D = [['sport', 'rules'], ['european', 'charter'], ['swimmers', 'squats'], ['sport', 'china'], ['ancient', 'sports'], ['greeks', 'olympic']]
+for wi, wi_plus_1 in D:
+    graph_d0.BFS(wi, node_count_thresh=float('inf'), arc_count_thresh=0)
+    S = graph_d0.get_shortest_path(wi_plus_1)
+    print(wi, wi_plus_1, ' '.join(S[::-1]))
+
+print()
+print("====================")
+print()
+# Analyze the salient features of the various S's in your output
+# ...
+for wi, wi_plus_1 in D:
+    graph_d10.BFS(wi, node_count_thresh=float('inf'), arc_count_thresh=0)
+    S = graph_d10.get_shortest_path(wi_plus_1)
+    print(wi, wi_plus_1, ' '.join(S[::-1]))

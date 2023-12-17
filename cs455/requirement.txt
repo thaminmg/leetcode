@@ -1,0 +1,32 @@
+Do individually or pair up with one person. In the latter case, submit a single assignment listing both team members as authors--such an assignment will be scored once and both team members will be assigned that score. The protocol does not explicitly try to balance out the work between members of two-person teams. Its in each team member's interest to figure out how to distribute the work evenly.
+
+We are interested in developing a simple text analysis system (think text mining) which operates on a graph, leverages certain (graph) operations on it, and combines them with certain basic statistical operations to deliver potentially interesting insights. The implementation must be in Python.
+
+We also want to apply this to a real document and report on what insights it delivers. The insights may or may not be of high quality, we just want to try out this approach, report results, along with concise interpretations. 
+
+Graph Of Document: By document I mean a sequence of words such as in this term project's description. For simplicity, we'll assume the text is tokenized into words on white space, and following that the words are all down-cased. This graph will be parametrized by a distance parameter d (see below how it is used) which will be supplied when an instance of the graph is created.
+
+Every distinct word that appears in the document will be represented by a unique node in the graph.
+For every pair of words u and v in which u appears at least once before v with no more than d words in between them in the document, the graph will have an arc u -> v.
+From the above two, we see that the graph is a directed one.
+
+Now some statistics, which will get captured as properties on nodes and arcs.
+
+Every node will have a property, call it count, that counts the number of occurrences of its word in the document.
+Every arc u -> v will have a property that records the number of times the event that characterizes the arc occurred in the document.
+In this project, nodes are identified by name only. There are no ids. Sure by using ids the arcs of the graph could be represented more compactly, but this complicates the project a bit and its focus lies elsewhere.
+
+Graph Operations
+
+Now let's switch gears and look at things from the perspective of operations to support on graphs. The idea is to first implement some basic algorithms, suitably adapted to the text mining setting. Following that you will apply these algorithms (with parameters chosen by you) on a real document, produce results, and comment on what insights (if any) they deliver. You are not expected to spend much time in the actual applying phase, it is more of a demo.
+
+In each of the operations below, node parameters are identified by name (the words they represent).
+
+get_count(word) - gets the count on the node representing 'word'. Raises an error if there is no node whose name is 'word'.
+BFS(s, node_count_thresh, arc_count_thresh) - Runs a slightly modified version of BFS rooted at s. The slight modification is to suppress any node that gets visited whose count is at least node_count_thresh and to supress any arc whose count is at most arc_count_thresh. Its as if whichever nodes or arcs that get suppressed did not exist in the graph (for the purposes of this computation). This BFS run should also explicitly record what the starting node was so that subsequent operations can leverage this (see bullets downstream). A call to this method should return the set of nodes visited, including s, and excluding those suppressed.
+get_shortest_path(v) - Return a shortest path between v and s (shortest in 'number of edges').  Raise an error if s is unknown, i.e. no BFS call was done before calling get_shortest_path(v).
+find_connected_components(node_count_thresh, arc_count_thresh) - Find the connected components in the graph after suppressing all nodes whose count is at least node_count_thresh and all arcs whose count is atmost arc_count_thresh. (Its as if the suppressed nodes and arcs were absent from the graph for the purposes of this computation.) Also ignore the directions on the arcs. Meaning that you are finding what are called weakly-connected components in a directed graph, which is the same as connected components in the undirected graph that underlies the directed graph. Output the found components as sets of nodes. 
+Implementation Notes
+
+Your implementations of the slightly modified versions of RunDijkstra and BFS must be from scratch. That said, you can use existing implementations of general-purpose data structures such as FIFO or priority queues.
+Implement find_connnected_components(count_thresh) by reusing BFS in the manner described in class. Sure this is not the most efficient way to find connected components but that's okay for this project.
