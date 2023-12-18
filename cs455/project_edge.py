@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from queue import Queue
 import string
 
@@ -9,7 +9,11 @@ class Graph:
         self.graph = defaultdict(list)
         self.counts = defaultdict(int)
         self.arc_counts = defaultdict(int)
+        self.bsf_start = None
+        self.dist = {}
+        self.visited = set()
         self.build_graph()
+
 
     def clean_words(self, words):
         punctuations = set(string.punctuation) # - set(['.'])
@@ -25,58 +29,78 @@ class Graph:
             self.counts[word] += 1
             for j in range(i+1, min(i+self.d+1, len(self.document))):
                 if word != self.document[j]:
-                    # distinct node ?
+                    # distinct node ? 
+                    # if self.document[j] not in self.graph[word]:
                     self.graph[word].append(self.document[j])
                     self.arc_counts[(word, self.document[j])] += 1
+
+        # for i, word in enumerate(self.document):
+        #     self.counts[word] += 1
+        #     for j in range(max(0, i - self.d), i):
+        #         self.graph[self.document[j]].append(word)
+        #         self.arc_counts[(self.document[j], word)] += 1
 
     def get_count(self, word):
         if word not in self.counts:
             raise ValueError(f"No node with name {word}")
         return self.counts[word]
 
+    def reset(self):
+        self.dist = {}
+        self.visited.clear()
+        self.bsf_start = None
+
     def BFS(self, s, node_count_thresh, arc_count_thresh):
-        # BFS run should also explicitly record what the starting node was so that subsequent operations can leverage this
+        self.bfs_start = s
+        self.dist = {s: 0}
         visited = set()
-        queue = Queue()
-        queue.put(s)
-        while not queue.empty():
-            node = queue.get()
+        q = Queue()
+        q.put(s)
+
+        while not q.empty():
+            node = q.get()
             if self.counts[node] < node_count_thresh:
                 visited.add(node)
                 for neighbor in self.graph[node]:
                     if self.arc_counts[(node, neighbor)] > arc_count_thresh and neighbor not in visited:
-                        queue.put(neighbor)
-        return visited
-        # return list(visited)
-                        
+                        q.put(neighbor)
+                        self.dist[neighbor] = self.dist[node] + 1
+        # print(visited)
+        # print()
+        self.visited = visited
+        return self.visited
 
     def get_shortest_path(self, v):
-        parent = {v: None}
-        queue = Queue()
-        queue.put(v)
-        while not queue.empty():
-            node = queue.get()
-            for neighbor in self.graph[node]:
-                if neighbor not in parent:
-                    parent[neighbor] = node
-                    queue.put(neighbor)
-        path = []
-        while v is not None:
-            path.append(v)
-            v = parent[v]
+        if self.bfs_start is None:
+            raise ValueError("BFS must be run before calling get_shortest_path")
+        if v not in self.visited:
+            return ["No path found"]
+        path = [v]
+        while v != self.bfs_start:
+            # print('in while')
+            # found = False
+            for node in self.graph:
+                if self.dist.get(v) and self.dist.get(node) == self.dist.get(v) - 1 and v in self.graph[node]:
+                    path.append(node)
+                    v = node
+                    # found = True
+                    break
+            # if not found:
+            #     return [f"No path from {self.bfs_start} to {v}"]
         return path[::-1]
 
     def find_connected_components(self, node_count_thresh, arc_count_thresh):
         visited = set()
         components = []
+
         for node in self.counts:
             if node not in visited and self.counts[node] < node_count_thresh:
                 component = self.BFS(node, node_count_thresh, arc_count_thresh)
-                visited.update(component)
-                # visited.extend(component)
+                visited |= component
                 components.append(component)
-        return components
 
+        return components
+   
 with open("/Users/lucaszhao/Documents/Study/leetcode/cs455/term_project_doc.txt", "r") as f:
     document = f.read()
 
@@ -95,7 +119,7 @@ node_count_thresh_d10 = min(counts_d10)  # or use average: sum(counts) / len(cou
 
 # Step 3: Repeat step 2 with different thresholds
 
-runs = [[min(counts_d0), 6], [float('inf'), 0], [max(counts_d10), 6], [0, float('inf')],[min(counts_d0) / 2, 6 / 2] ]
+runs = [[min(counts_d0), 6], [float('inf'), 0]]#,  [0, float('inf')],[min(counts_d0) / 2, 6 / 2] ] #[max(counts_d10), 6],
 D = [['sport', 'rules'], ['european', 'charter'], ['swimmers', 'squats'], ['sport', 'china'], ['ancient', 'sports'], ['greeks', 'olympic']]
 for run in runs:
     node_count_thresh = run[0] 
@@ -109,56 +133,18 @@ for run in runs:
     for wi, wi_plus_1 in D:
         graph_d0.BFS(wi, node_count_thresh, arc_count_thresh)
         S = graph_d0.get_shortest_path(wi_plus_1)
-        print(wi, wi_plus_1, ' '.join(S[::-1]))
+        print(wi, wi_plus_1, ': ', ' '.join(S[::-1]))
+        graph_d0.reset()
     print(f"No. of connected components: {len(components_d0_no_thresh)}")
     print("========================================")
     print("----- D = 10 -----")
     for wi, wi_plus_1 in D:
         graph_d10.BFS(wi, node_count_thresh, arc_count_thresh)
         S = graph_d10.get_shortest_path(wi_plus_1)
-        print(wi, wi_plus_1, ' '.join(S[::-1]))
+        print(wi, wi_plus_1, ': ', ' '.join(S[::-1]))
+        graph_d10.reset()
     print(f"No. of connected components: {len(components_d10_no_thresh)}")
     print("========================================")
     print()
     print()
 
-
-
-    # def BFS(self, s, node_count_thresh, arc_count_thresh):
-    #     # BFS run should also explicitly record what the starting node was so that subsequent operations can leverage this
-    #     visited = set()
-    #     queue = Queue()
-    #     queue.put(s)
-    #     while not queue.empty():
-    #         node = queue.get()
-    #         if self.counts[node] < node_count_thresh:
-    #             visited.add(node)
-    #             for neighbor in self.graph[node]:
-    #                 if self.arc_counts[(node, neighbor)] > arc_count_thresh and neighbor not in visited:
-    #                     queue.put(neighbor)
-    #     return visited
-    #     # return list(visited)
-                        
-
-    # def get_shortest_path(self, v):
-    #     parent = {v: None}
-    #     queue = Queue()
-    #     queue.put(v)
-    #     while not queue.empty():
-    #         node = queue.get()
-    #         for neighbor in self.graph[node]:
-    #             if neighbor not in parent:
-    #                 parent[neighbor] = node
-    #                 queue.put(neighbor)
-    #     path = []
-    #     while v is not None:
-    #         path.append(v)
-    #         v = parent[v]
-    #     return path[::-1]
-    
-    # def main():
-
-    # for wi, wi_plus_1 in D:
-    #     graph_d0.BFS(wi, node_count_thresh, arc_count_thresh)
-    #     S = graph_d0.get_shortest_path(wi_plus_1)
-    #     print(wi, wi_plus_1, ' '.join(S[::-1]))
