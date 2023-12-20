@@ -75,7 +75,7 @@ S = [random.getrandbits(64) for _ in range(10000)]
 results = []
 
 for m in [2**i for i in range(6, 17)]:  # 64, 128, 256, ..., 65536
-    for k in [2**i for i in range(int(math.log2(m//2)) + 1)]:  # 1, 2, 4, ..., m/2
+    for k in [1, 2, 4, 8, 16, int(math.log2(m//2))] :  # 1, 2, 4, ..., m/2 [2**i for i in range(int(math.log2(m//2)) + 1)]
         # Create a BF with params m=m, k=k, n=64
         bf = BloomFilter(m=m, k=k, n=64)
         
